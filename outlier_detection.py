@@ -22,73 +22,73 @@ def img_to_np(path, resize = True):
     images = np.array(img_array)
     return images
 
-#path_train = "D:\Video\Skyrim\Screens\Test40\\**\*.*" # 40img = 1m25s
-path_train = "D:\Video\Skyrim\Screens\Test100\\**\*.*" # 100img = 2m17s
-path_test = "D:\Video\Skyrim\Screens\Outliers\\**\*.*"
+path_train = "D:\Video\Skyrim\Screens\Training\\**\*.*" # 100img ~= 3m30s
 
 train = img_to_np(path_train)
-test = img_to_np(path_test)
 train = train.astype('float32') / 255.
-test = test.astype('float32') / 255.
 
 encoding_dim = 1024
 dense_dim = [8, 8, 128]
 
 encoder_net = tf.keras.Sequential(
-  [
-      InputLayer(input_shape=train[0].shape),
-      Conv2D(64, 4, strides=2, padding='same', activation=tf.nn.relu),
-      Conv2D(128, 4, strides=2, padding='same', activation=tf.nn.relu),
-      Conv2D(512, 4, strides=2, padding='same', activation=tf.nn.relu),
-      Flatten(),
-      Dense(encoding_dim,)
-  ])
+    [
+        InputLayer(input_shape=train[0].shape),
+        Conv2D(64, 4, strides=2, padding='same', activation=tf.nn.relu),
+        Conv2D(128, 4, strides=2, padding='same', activation=tf.nn.relu),
+        Conv2D(512, 4, strides=2, padding='same', activation=tf.nn.relu),
+        Flatten(),
+        Dense(encoding_dim,)
+    ])
 
 decoder_net = tf.keras.Sequential(
-  [
-      InputLayer(input_shape=(encoding_dim,)),
-      Dense(np.prod(dense_dim)),
-      Reshape(target_shape=dense_dim),
-      Conv2DTranspose(256, 4, strides=2, padding='same', activation=tf.nn.relu),
-      Conv2DTranspose(64, 4, strides=2, padding='same', activation=tf.nn.relu),
-      Conv2DTranspose(3, 4, strides=2, padding='same', activation='sigmoid')
-  ])
+    [
+        InputLayer(input_shape=(encoding_dim,)),
+        Dense(np.prod(dense_dim)),
+        Reshape(target_shape=dense_dim),
+        Conv2DTranspose(256, 4, strides=2, padding='same', activation=tf.nn.relu),
+        Conv2DTranspose(64, 4, strides=2, padding='same', activation=tf.nn.relu),
+        Conv2DTranspose(3, 4, strides=2, padding='same', activation='sigmoid')
+    ])
 
 od = OutlierAE( threshold = 0.001,
-                encoder_net=encoder_net,
-                decoder_net=decoder_net)
+                    encoder_net=encoder_net,
+                    decoder_net=decoder_net)
 
 adam = tf.keras.optimizers.Adam(lr=1e-4)
 
 od.fit(train, epochs=100, verbose=True,
-       optimizer = adam)
+        optimizer = adam)
 
-od.infer_threshold(test, threshold_perc=95)
+def find(path_test):
+    test = img_to_np(path_test)
+    test = test.astype('float32') / 255.
 
-preds = od.predict(test, outlier_type='instance',
-            return_instance_score=True,
-            return_feature_score=True)
+    od.infer_threshold(test, threshold_perc=95)
 
-for i, fpath in enumerate(glob.glob(path_test)):
-    if(preds['data']['is_outlier'][i] == 1):
-        source = fpath
-        shutil.copy(source, 'img\\')
+    preds = od.predict(test, outlier_type='instance',
+                return_instance_score=True,
+                return_feature_score=True)
+
+    for i, fpath in enumerate(glob.glob(path_test)):
+        if(preds['data']['is_outlier'][i] == 1):
+            source = fpath
+            shutil.copy(source, 'img\\')
+            
+    filenames = [os.path.basename(x) for x in glob.glob(path_test, recursive=True)]
+
+    dict1 = {'Filename': filenames,
+        'instance_score': preds['data']['instance_score'],
+        'is_outlier': preds['data']['is_outlier']}
         
-filenames = [os.path.basename(x) for x in glob.glob(path_test, recursive=True)]
+    df = pd.DataFrame(dict1)
+    df_outliers = df[df['is_outlier'] == 1]
 
-dict1 = {'Filename': filenames,
-     'instance_score': preds['data']['instance_score'],
-     'is_outlier': preds['data']['is_outlier']}
-     
-df = pd.DataFrame(dict1)
-df_outliers = df[df['is_outlier'] == 1]
+    print(df_outliers)
 
-print(df_outliers)
+    recon = od.ae(test).numpy()
 
-recon = od.ae(test).numpy()
-
-plot_feature_outlier_image(preds, test, 
-                           X_recon=recon,  
-                           max_instances=5,
-                           outliers_only=True,
-                           figsize=(30,30))
+    plot_feature_outlier_image(preds, test, 
+                            X_recon=recon,  
+                            max_instances=5,
+                            outliers_only=True,
+                            figsize=(15,15))
