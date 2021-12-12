@@ -1,13 +1,11 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose, UpSampling2D,\
-    Dense, Layer, Reshape, InputLayer, Flatten, Input
+from tensorflow.keras.layers import Conv2D, Conv2DTranspose, Dense, Reshape, InputLayer, Flatten
 import numpy as np
 
-def coder_net(train):
-    encoding_dim = 1024
-    dense_dim = [8, 8, 128]
+encoding_dim = 1024
+dense_dim = [8, 8, 128]
 
-    def encoder():
+def encoder_net(train):
         encoder_net = tf.keras.Sequential(
             [
                 InputLayer(input_shape=train[0].shape),
@@ -18,8 +16,9 @@ def coder_net(train):
                 Dense(encoding_dim,)
             ])
         return encoder_net
+    
 
-    def decoder():
+def decoder_net(train):
         decoder_net = tf.keras.Sequential(
             [
                 InputLayer(input_shape=(encoding_dim,)),
@@ -30,3 +29,4 @@ def coder_net(train):
                 Conv2DTranspose(3, 4, strides=2, padding='same', activation='sigmoid')
             ])
         return decoder_net
+        

@@ -1,16 +1,12 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 import glob
 import os
 import shutil
-from collections import Counter
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose, UpSampling2D,\
-    Dense, Layer, Reshape, InputLayer, Flatten, Input, MaxPooling2D
 from alibi_detect.od import OutlierAE
-from alibi_detect.utils.visualize import plot_instance_score, plot_feature_outlier_image
+from alibi_detect.utils.visualize import plot_feature_outlier_image
 from encoder_decoder import *
 
 def img_to_np(path, resize = True):  
@@ -29,8 +25,8 @@ train = img_to_np(path_train)
 train = train.astype('float32') / 255.
 
 od = OutlierAE( threshold = 0.001,
-                    encoder_net=coder_net(train).encoder,
-                    decoder_net=coder_net(train).decoder)
+                    encoder_net=encoder_net(train),
+                    decoder_net=decoder_net(train))
 
 adam = tf.keras.optimizers.Adam(lr=1e-4)
 
