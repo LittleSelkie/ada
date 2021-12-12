@@ -7,7 +7,9 @@ import shutil
 import tensorflow as tf
 from alibi_detect.od import OutlierAE
 from alibi_detect.utils.visualize import plot_feature_outlier_image
-from encoder_decoder import *
+from alibi_detect.utils.saving import save_detector, load_detector
+from detection_algorithms.encoder_decoder import *
+#from controller import study_dir as sd
 
 def img_to_np(path, resize = True):  
     img_array = []
@@ -19,21 +21,27 @@ def img_to_np(path, resize = True):
     images = np.array(img_array)
     return images
 
-path_train = "D:\Video\Skyrim\Screens\Training\\**\*.*" # 100img ~= 3m30s
+sd = "D:\Video\Skyrim\Screens\Training\\**\*.*"
 
-train = img_to_np(path_train)
+train = img_to_np(sd)
 train = train.astype('float32') / 255.
 
-od = OutlierAE( threshold = 0.001,
+def load_mydetector(path, load=bool):
+    if load == 0:
+        od = load_detector(path)
+    else:
+        od = OutlierAE( threshold = 0.001,
                     encoder_net=encoder_net(train),
                     decoder_net=decoder_net(train))
 
-adam = tf.keras.optimizers.Adam(lr=1e-4)
+        adam = tf.keras.optimizers.Adam(lr=1e-4)
 
-od.fit(train, epochs=100, verbose=True,
-        optimizer = adam)
+        od.fit(train, epochs=100, verbose=True,
+                optimizer = adam)
+        save_detector(od, path)
 
-def find(path_test):
+def find(path_test, path_detector):
+    od = load_detector(path_detector)
     test = img_to_np(path_test)
     test = test.astype('float32') / 255.
 
