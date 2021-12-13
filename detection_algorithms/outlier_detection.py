@@ -9,6 +9,7 @@ from alibi_detect.od import OutlierAE
 from alibi_detect.utils.visualize import plot_feature_outlier_image
 from alibi_detect.utils.saving import save_detector, load_detector
 from detection_algorithms.encoder_decoder import *
+from report_builders.excel_builder import *
 #from controller import study_dir as sd
 
 def img_to_np(path, resize = True):  
@@ -40,7 +41,7 @@ def load_mydetector(path, load=bool):
                 optimizer = adam)
         save_detector(od, path)
 
-def find(path_test, path_detector):
+def find(path_test, path_detector, test_name):
     od = load_detector(path_detector)
     test = img_to_np(path_test)
     test = test.astype('float32') / 255.
@@ -64,6 +65,9 @@ def find(path_test, path_detector):
         
     df = pd.DataFrame(dict1)
     df_outliers = df[df['is_outlier'] == 1]
+
+    if test_name != 0:
+        create_report(df, test_name)
 
     print(df_outliers)
 

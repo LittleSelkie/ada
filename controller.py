@@ -13,7 +13,7 @@ test4 = "D:\Video\Skyrim\Screens\Outliers\Test4\\**\*.*"
 test5 = "D:\Video\Skyrim\Screens\Outliers\Test5\\**\*.*"
 
 load_detec(detector_dir, 0) # 1 - new learning path; 0 - no learning
-find(test1, detector_dir)
-find(test2, detector_dir)
-find(test4, detector_dir)
-find(test5, detector_dir)
+find(test1, detector_dir, 0)
+find(test2, detector_dir, 0)
+find(test4, detector_dir, 0)
+find(test5, detector_dir, 0)
